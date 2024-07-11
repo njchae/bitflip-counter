@@ -5,10 +5,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-// https://stackoverflow.com/questions/9596945/how-to-get-appropriate-timestamp-in-c-for-logs
-
-char *get_time() 
-{
+char *get_time() { // Get time in YYYY-MM-DD hh:mm:ss format
   time_t current;
   struct tm *time_info;
   char *time_string = malloc(100);
@@ -25,19 +22,18 @@ char *get_time()
 }
 
 int main() {
-  FILE *out_file = fopen("/mnt/c/Users/nicoc/bitflip-counter/counter/counter_data.txt", "w");
-  if (out_file == NULL)
-  {
-    printf("Error! Could not open file\n");
-    exit(-1);
+  FILE *out_file = fopen("counter_data.txt", "w");
+  if (out_file == NULL) {
+    printf("Error opening file\n");
+    exit(1);
   }
 
-  size_t bytes = 1073741824; // one gigabyte
+  size_t bytes = 1073741824; // one GB
   unsigned int tests = 0;
   unsigned char total = 0;
 
-  fprintf(out_file, "=== Bitflipped ===\r");
-  fprintf(out_file, "==================\r");
+  fprintf(out_file, "=== Bitflip Counter ===\r");
+  fprintf(out_file, "=======================\r");
   fprintf(out_file, "Allocating a gigabyte ...\r");
   unsigned char *buffer = (unsigned char *)calloc(bytes, 1);
 
@@ -50,35 +46,24 @@ int main() {
   free(start_time); // Free the allocated memory for the start time
 
   fflush(out_file);
-  while (total == 0) {
-    // We aren't going to miss a bitflip by being slow
+  while (total < 100) {
+    // delay bitflip count by 30 secs
     sleep(30);
 
-    // Naively walk through and tally all zero bytes
+    // Iterate through and tally all zero bytes
     for (size_t i = 0; i < bytes; ++i) {
       total += buffer[i];
     }
 
-    // Keep the user sane that it isn't frozen :)
-    fprintf(out_file, "\rTest run #%d", tests);
+    // Update test #, bitflip count, and time
+    char *curr_time = get_time();
+    fprintf(out_file, "\rTest run #%d, ", tests);
+    fprintf(out_file, "Bitflip count is %d, ", total);
+    fprintf(out_file, "Test terminated at %s\r", curr_time);
     ++tests;
+    fflush(out_file);
+    free(curr_time);
   }
-
-  char *error_time = get_time();
-  fprintf(out_file, "--- !!! ---\r");
-  fprintf(out_file, "Error detected: %s\r", error_time);
-  fprintf(out_file, "Result should be 0 but is %d\r", total);
-  fprintf(out_file, "Total tests run: %d\r", tests);
-  free(error_time); // Free the allocated memory for the error time
-
-  fflush(out_file);
   fclose(out_file);
   free(buffer);
-
-//char *timestamp()
-//{
-//  time_t ltime; /* calendar time */
-//  ltime = time(NULL); /* get current cal time */
-//  return asctime(localtime(&ltime));
-//}
 }

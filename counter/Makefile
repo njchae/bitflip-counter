@@ -1,7 +1,18 @@
-all: count
+CC = gcc
 
-count: counter.c
-	$(CC) -O3 -Wall -W -pedantic -std=c99 -o counter_data.txt counter.c
+CFLAGS = -O3 -Wall -W -pedantic -std=c99
+
+TARGET = counter
+
+all: $(TARGET)
+
+$(TARGET): counter.o
+	$(CC) $(CFLAGS) -o $(TARGET) counter.o
+
+counter.o: counter.c
+	$(CC)  $(CFLAGS) -c counter.c
 
 clean:
-	rm counter_data.txt
+	rm -f $(TARGET) *.o counter_data.txt
+
+.PHONY: all clean
